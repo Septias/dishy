@@ -28,6 +28,7 @@ Mousse
     (ingredient_line
       quantity: (quantity
         (integer))
+      unit: (unit)
       name: (ingredient_name))
     (ingredient_line
       quantity: (quantity

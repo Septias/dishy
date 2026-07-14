@@ -17,7 +17,8 @@ fn main() {
     let Cli { plan, dish_root } = Cli::parse();
 
     let cookbook = CookBook::from_file(&dish_root);
-    let shopping_lists = WeekPlan::from_file(&plan, &cookbook).shopping_lists();
+    let week_plan = WeekPlan::from_file(&plan, &cookbook);
+    let shopping_lists = week_plan.shopping_lists();
 
     // Generate concatenated markdown with numbered sections
     let mut output = String::new();
@@ -29,6 +30,8 @@ fn main() {
     }
 
     fs::write("./shopping-list.md", &output).expect("Failed to write shopping-list.md");
+    fs::write("./dishes.md", week_plan.dishes_as_markdown())
+        .expect("Failed to write shopping-list.md");
 
     println!("Shopping lists generated successfully!");
 }

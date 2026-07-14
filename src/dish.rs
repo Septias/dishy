@@ -18,6 +18,8 @@ pub(crate) enum DishPlanError {
 /// A single dish.
 #[derive(Debug)]
 pub(crate) struct Dish {
+    /// Name of the dish.
+    pub(crate) name: String,
     /// The amount of people to feed.
     pub(crate) people: Option<usize>,
     /// For how many people the recipe is scaled.
@@ -46,7 +48,7 @@ impl Dish {
         let root = tree.root_node();
 
         if root.has_error() {
-            anyhow::bail!("Parse error in dish file: {}", path.display());
+            panic!("Parse error in dish file: {}", path.display());
         }
 
         let mut cursor = root.walk();
@@ -75,6 +77,7 @@ impl Dish {
         }
 
         Ok(Self {
+            name: dish_name.to_string(),
             people: Some(people),
             recepie_people: recipe_people,
             ingredients,
@@ -104,12 +107,16 @@ impl Dish {
     }
 
     /// Generate markdown for the dish with scaled quantities.
-    pub(crate) fn as_markdown(&self, dish_name: &str) -> String {
+    pub(crate) fn as_markdown(&self) -> String {
         let target_people = self.people.unwrap_or(self.recepie_people);
+        println!("{target_people}");
         let scaled_ingredients = self.shopping_list();
 
         let mut output = String::new();
-        output.push_str(&format!("## {} ({} Personen)\n\n", dish_name, target_people));
+        output.push_str(&format!(
+            "## {} ({} Personen)\n\n",
+            self.name, target_people
+        ));
         output.push_str("### Zutaten\n");
 
         for ingredient in scaled_ingredients {
@@ -124,6 +131,7 @@ impl Dish {
         // Add preparation section if it exists
         if !self.blocks.is_empty() {
             output.push('\n');
+            output.push_str("#");
             for block in &self.blocks {
                 output.push_str(block);
                 output.push('\n');
@@ -474,7 +482,7 @@ Just some random text
         let file = create_test_dish_file(content);
         let dish = Dish::from_file(file.path(), "Test Dish", 4).unwrap();
 
-        let markdown = dish.as_markdown("Test Dish");
+        let markdown = dish.as_markdown();
 
         assert!(markdown.contains("## Test Dish (4 Personen)"));
         assert!(markdown.contains("### Zutaten"));
@@ -500,7 +508,7 @@ Just some random text
         let file = create_test_dish_file(content);
         let dish = Dish::from_file(file.path(), "Simple Dish", 2).unwrap();
 
-        let markdown = dish.as_markdown("Simple Dish");
+        let markdown = dish.as_markdown();
 
         assert!(markdown.contains("## Simple Dish (2 Personen)"));
         assert!(markdown.contains("- 100.0 g Butter"));

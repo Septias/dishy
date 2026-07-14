@@ -1,0 +1,63 @@
+- [ ] 10 EL Kabapulver (vegan)  
+- [ ] (Hafer-)Milch Wieviel? 
+- [ ] Je 1 Packung Gummibärchen (vegan) Süß und Sauer  
+- [ ] Allgemeine Self-Service Snacks für Einheiten, Obst, Gemüse, Nüsse, Gummibärchen
+- [ ] 4 Tafeln vegane „Vollmilchschokolade“  
+- [ ] Bananen, Äpfel, Trauben, Birnen  
+- [ ] 3x Sekt (alk. Free)
+- [ ] 3x O-Saft  
+- [ ] 42 Lollis
+- [ ] 1x Tomaten Saft  
+- [ ] 2x Multivitamin  
+- [ ] Eiskaffee/-Kakao mit Vanilleeis
+- [ ] Viele M&Ms  
+- [ ] alle Salzbrezeln
+- [ ] alle Manner
+- [ ] 4x GKatjes
+- [ ] 3x Nussschokolade  
+- [ ] 3x Erdnüsse  
+- [ ] 3x Trockenfrüchte (Mango, Banane, Pflaume)
+- [ ] 1x alkoholfreier Sekt
+- [ ] 1 Pck. saure vegane Gummibärchen
+- [ ] 1 Pck. vegane Gummibärchen (nicht sauer!)
+- [ ] Bobi spezialsnack (Fahrtenabend)
+- [ ] 10x Brote (1kg)
+- [ ] 2,5 kg Couscous
+- [ ] 5x Gurke
+- [ ] 5x Paprika
+- [ ] 5x Mais in der Dose  
+- [ ] 3x Feta
+- [ ] 2x Feta VEGAN  
+- [ ] 15x Tomaten
+- [ ] 5x Kichererbsen in der Dose / Glas  
+- [ ] 5x Gemüsebrühe Würfel  
+- [ ] 5x Tomatenmark
+- [ ] 5x Butter
+- [ ] 2x Vegane Butter
+- [ ] 3x Frischkäse ohne Kräuter
+- [ ] 3x Frischkäse mit Kräutern 
+- [ ] 4x Frischkäse Vegan
+- [ ] 5x Marmelade
+- [ ] 5x Gemüseaufstrich Tomate
+- [ ] 5 Packungen Käse in Scheiben
+- [ ] 28x Äpfel
+- [ ] 5x Gemüseaufstrich (was anderes als Tomate)
+- [ ] 5x Hummus vegan
+- [ ] 3x Kekse
+- [ ] 2x Kekse vegan
+- [ ] 28x Möhren
+- [ ] 2x Chinakohl (mittlere Größe)
+- [ ] 1x Bund Lauchzwiebel
+- [ ] viel Ingwer, große Knolle
+- [ ] 1x Pack Knoblauch (3 Knollen)  
+- [ ] 4x Birne
+- [ ] 4x Apfel
+- [ ] 5x Karotte
+- [ ] 1x Rettich
+- [ ] 1x Pack Salz  
+- [ ] 2x Kekse  
+- [ ] 2x O-Saft  
+- [ ] 1x alkoholfreier Sekt  
+- [ ] 1x Vanilleeis  
+- [ ] 1x H-Milch
+- [ ] 1x Hafermilch

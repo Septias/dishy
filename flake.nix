@@ -46,6 +46,8 @@
       {pkgs}: {
         default = pkgs.mkShellNoCC {
           packages = with pkgs; [
+            pandoc
+            tectonic
             rustToolchain
             openssl
             pkg-config

@@ -55,6 +55,26 @@ pub(crate) struct WeekPlan {
 }
 
 impl WeekPlan {
+    /// Generate markdown for all dishes with scaled quantities.
+    pub(crate) fn dishes_as_markdown(&self) -> String {
+        let mut output = String::new();
+
+        for (day_idx, day) in self.days.iter().enumerate() {
+            if !day.dishes.is_empty() {
+                output.push_str(&format!("# Tag {}\n\n", day_idx + 1));
+
+                for dish in &day.dishes {
+                    output.push_str(&dish.as_markdown());
+                    output.push_str("\n");
+                }
+
+                output.push_str("\n");
+            }
+        }
+
+        output
+    }
+
     /// Generate multiple shopping lists based on shopping markers across all days.
     /// Shopping lists span multiple days until a shopping marker is encountered.
     pub(crate) fn shopping_lists(&self) -> Vec<IngredientList> {
@@ -201,6 +221,7 @@ fn parse_day_line(
             "day_with_count" => {
                 if let Some(count_node) = child.child_by_field_name("count") {
                     let count_str = content[count_node.byte_range()].trim();
+                    let count_str = count_str.trim_start_matches('(').trim_end_matches(')');
                     day_people = count_str.parse().ok();
                 }
             }
@@ -242,8 +263,6 @@ fn parse_menu(
         eprintln!("        - kind: {}", child.kind());
         match child.kind() {
             "rest_day" => {
-                eprintln!("        Rest day - skipping");
-                // Skip rest days
                 return;
             }
             "menu_items" => {
@@ -275,7 +294,6 @@ fn parse_menu_item(
     cookbook: &CookBook,
     dishes: &mut Vec<Dish>,
     shopping_days: &mut Vec<usize>,
-
     default_people: usize,
     day_people: Option<usize>,
 ) {
@@ -687,6 +705,63 @@ Montag: [[Dish1]](4)
     }
 
     #[test]
+    fn test_weekplan_from_file_daycount() {
+        let menu_content = r#"Personen: 2
+Starttag: 2026-01-01
+Montag(4): [[Dish1]]
+"#;
+        let menu_file = create_test_dish_file(menu_content);
+
+        let dish_content = r#"2 Personen
+
+## Zutaten
+- 100 g Butter
+
+## Zubereitung
+1. Mix everything together.
+"#;
+        let temp_dir = TempDir::new().unwrap();
+        std::fs::write(temp_dir.path().join("Dish1.txt"), dish_content).unwrap();
+
+        let cookbook = CookBook::from_file(temp_dir.path());
+        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook);
+
+        assert_eq!(weekplan.days.len(), 1);
+        assert_eq!(weekplan.days[0].dishes.len(), 1);
+        // Should be scaled to 4 people (dish count override)
+        let ingredients = weekplan.days[0].dishes[0].shopping_list();
+        assert_eq!(ingredients[0].amount, 200.0); // 100g * 2
+    }
+
+    #[test]
+    fn test_weekplan_from_file_daycount_complex() {
+        let menu_content = r#"Personen: 2
+Starttag: 2026-01-01
+Montag(4): [[Dish1]](2)
+"#;
+        let menu_file = create_test_dish_file(menu_content);
+
+        let dish_content = r#"2 Personen
+
+## Zutaten
+- 100 g Butter
+
+## Zubereitung
+1. Mix everything together.
+"#;
+        let temp_dir = TempDir::new().unwrap();
+        std::fs::write(temp_dir.path().join("Dish1.txt"), dish_content).unwrap();
+
+        let cookbook = CookBook::from_file(temp_dir.path());
+        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook);
+
+        assert_eq!(weekplan.days.len(), 1);
+        assert_eq!(weekplan.days[0].dishes.len(), 1);
+        let ingredients = weekplan.days[0].dishes[0].shopping_list();
+        assert_eq!(ingredients[0].amount, 100.0);
+    }
+
+    #[test]
     fn test_weekplan_shopping_lists_spans_multiple_days() {
         let dish_content = r#"2 Personen
 
@@ -766,5 +841,43 @@ Montag: [[Dish1]](4)
         assert_eq!(lists.len(), 1);
         // All dishes in one list
         assert_eq!(lists[0].0.len(), 2);
+    }
+
+    #[test]
+    fn test_weekplan_dishes_as_markdown() {
+        let dish_content = r#"2 Personen
+
+## Zutaten
+- 100 g Butter
+- 200 ml Milch
+
+## Zubereitung
+1. Mix everything together.
+"#;
+        let file1 = create_test_dish_file(dish_content);
+        let file2 = create_test_dish_file(dish_content);
+
+        let dish1 = Dish::from_file(file1.path(), "Pasta", 4).unwrap();
+        let dish2 = Dish::from_file(file2.path(), "Salad", 2).unwrap();
+
+        let day1 = Day {
+            dishes: vec![dish1, dish2],
+            shopping_days: vec![],
+        };
+
+        let weekplan = WeekPlan {
+            _start: chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
+            days: vec![day1],
+        };
+
+        let markdown = weekplan.dishes_as_markdown();
+
+        assert!(markdown.contains("# Tag 1"));
+        assert!(markdown.contains("## Pasta (4 Personen)"));
+        assert!(markdown.contains("## Salad (2 Personen)"));
+        assert!(markdown.contains("- 200.0 g Butter")); // Pasta scaled to 4
+        assert!(markdown.contains("- 100.0 g Butter")); // Salad at 2
+        assert!(markdown.contains("## Zubereitung"));
+        assert!(markdown.contains("1. Mix everything together."));
     }
 }

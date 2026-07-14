@@ -63,6 +63,7 @@ Auf der anderen Seite gibt es Mie-Nudeln auch ohne Ei, so kann man das Gericht a
     (ingredient_line
       quantity: (quantity
         (integer))
+      unit: (unit)
       name: (ingredient_name))
     (ingredient_line
       name: (ingredient_name))
@@ -75,6 +76,7 @@ Auf der anderen Seite gibt es Mie-Nudeln auch ohne Ei, so kann man das Gericht a
     (ingredient_line
       quantity: (quantity
         (integer))
+      unit: (unit)
       name: (ingredient_name))
     (ingredient_line
       name: (ingredient_name))

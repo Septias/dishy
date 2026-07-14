@@ -53,6 +53,7 @@ Kaiserschmarn with Portionen format
     (ingredient_line
       quantity: (quantity
         (integer))
+      unit: (unit)
       name: (ingredient_name))
     (ingredient_line
       quantity: (quantity

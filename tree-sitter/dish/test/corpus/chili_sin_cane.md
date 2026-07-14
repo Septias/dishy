@@ -103,18 +103,12 @@ Ich serviere dieses Chili mit geröstetem Brot. Hierzu schneide ich einige Brots
     (ingredient_line
       quantity: (quantity
         (integer))
+      unit: (unit)
       name: (ingredient_name))
     (ingredient_line
       quantity: (quantity
         (integer))
-      name: (ingredient_name))
-    (ingredient_line
-      quantity: (quantity
-        (integer))
-      name: (ingredient_name))
-    (ingredient_line
-      quantity: (quantity
-        (integer))
+      unit: (unit)
       name: (ingredient_name))
     (ingredient_line
       quantity: (quantity
@@ -129,6 +123,17 @@ Ich serviere dieses Chili mit geröstetem Brot. Hierzu schneide ich einige Brots
     (ingredient_line
       quantity: (quantity
         (integer))
+      unit: (unit)
+      name: (ingredient_name))
+    (ingredient_line
+      quantity: (quantity
+        (integer))
+      unit: (unit)
+      name: (ingredient_name))
+    (ingredient_line
+      quantity: (quantity
+        (integer))
+      unit: (unit)
       name: (ingredient_name)))
   (preparation_section
     (text)

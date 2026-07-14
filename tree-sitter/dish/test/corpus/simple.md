@@ -67,6 +67,7 @@ Dieses traditionelle Rezept stammt aus einem Tiroler Landgasthof und wird dort s
     (ingredient_line
       (quantity
         (integer))
+      (unit)
       (ingredient_name))
     (ingredient_line
       (quantity
@@ -81,6 +82,7 @@ Dieses traditionelle Rezept stammt aus einem Tiroler Landgasthof und wird dort s
     (ingredient_line
       (quantity
         (integer))
+      (unit)
       (ingredient_name))
     (ingredient_line
       (quantity

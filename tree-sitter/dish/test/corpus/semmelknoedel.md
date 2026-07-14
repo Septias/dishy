@@ -60,6 +60,7 @@ Semmelknoedel
     (ingredient_line
       quantity: (quantity
         (float))
+      unit: (unit)
       name: (ingredient_name))
     (ingredient_line
       quantity: (quantity

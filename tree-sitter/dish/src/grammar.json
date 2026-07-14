@@ -237,7 +237,15 @@
             },
             {
               "type": "STRING",
+              "value": "G"
+            },
+            {
+              "type": "STRING",
               "value": "mg"
+            },
+            {
+              "type": "STRING",
+              "value": "MG"
             },
             {
               "type": "STRING",
@@ -245,7 +253,15 @@
             },
             {
               "type": "STRING",
+              "value": "KG"
+            },
+            {
+              "type": "STRING",
               "value": "el"
+            },
+            {
+              "type": "STRING",
+              "value": "EL"
             },
             {
               "type": "STRING",
@@ -253,11 +269,23 @@
             },
             {
               "type": "STRING",
+              "value": "TL"
+            },
+            {
+              "type": "STRING",
               "value": "l"
             },
             {
               "type": "STRING",
+              "value": "L"
+            },
+            {
+              "type": "STRING",
               "value": "ml"
+            },
+            {
+              "type": "STRING",
+              "value": "ML"
             },
             {
               "type": "STRING",
@@ -266,6 +294,10 @@
             {
               "type": "STRING",
               "value": "stk"
+            },
+            {
+              "type": "STRING",
+              "value": "Stk"
             },
             {
               "type": "STRING",
@@ -285,14 +317,6 @@
             },
             {
               "type": "STRING",
-              "value": "EL"
-            },
-            {
-              "type": "STRING",
-              "value": "TL"
-            },
-            {
-              "type": "STRING",
               "value": "Stück"
             },
             {
@@ -302,6 +326,38 @@
             {
               "type": "STRING",
               "value": "Packungen"
+            },
+            {
+              "type": "STRING",
+              "value": "Pkg."
+            },
+            {
+              "type": "STRING",
+              "value": "Prise"
+            },
+            {
+              "type": "STRING",
+              "value": "Stiele"
+            },
+            {
+              "type": "STRING",
+              "value": "Bund"
+            },
+            {
+              "type": "STRING",
+              "value": "Messerspitze"
+            },
+            {
+              "type": "STRING",
+              "value": "Msp"
+            },
+            {
+              "type": "STRING",
+              "value": "Glas"
+            },
+            {
+              "type": "STRING",
+              "value": "glas"
             }
           ]
         }

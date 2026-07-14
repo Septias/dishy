@@ -1,0 +1,43 @@
+==================
+Simple menu plan
+==================
+Personen: 26
+Starttag: 2026-04-02
+Donnerstag(12): [[Tagliatelle mit Auberginensugo]]
+Freitag(12): [[Standartfrühstück]](5), [[Gebratene Maultaschen]]
+Samstag: Reste
+
+---
+
+(source_file
+  (persons_line
+    (integer))
+  (starttag_line
+    (date))
+  (day_line
+    (day_with_count
+      (day_name)
+      (count))
+    (menu
+      (menu_items
+        (menu_item
+          (dish_with_count
+            (dish))))))
+  (day_line
+    (day_with_count
+      (day_name)
+      (count))
+    (menu
+      (menu_items
+        (menu_item
+          (dish_with_count
+            (dish)
+            (count)))
+        (menu_item
+          (dish_with_count
+            (dish))))))
+  (day_line
+    (day_with_count
+      (day_name))
+    (menu
+      (rest_day))))

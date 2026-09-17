@@ -6,6 +6,7 @@ mod error;
 mod plan;
 mod types;
 
+use anyhow::Context;
 use clap::Parser;
 use cli::Cli;
 use plan::Plan;
@@ -13,11 +14,11 @@ use std::fs;
 
 use crate::{cookbook::CookBook, plan::WeekPlan};
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let Cli { plan, dish_root } = Cli::parse();
 
-    let cookbook = CookBook::from_file(&dish_root);
-    let week_plan = WeekPlan::from_file(&plan, &cookbook);
+    let cookbook = CookBook::from_file(&dish_root)?;
+    let week_plan = WeekPlan::from_file(&plan, &cookbook)?;
     let shopping_lists = week_plan.shopping_lists();
 
     // Generate concatenated markdown with numbered sections
@@ -29,9 +30,8 @@ fn main() {
         output.push_str("\n\n");
     }
 
-    fs::write("./shopping-list.md", &output).expect("Failed to write shopping-list.md");
-    fs::write("./dishes.md", week_plan.dishes_as_markdown())
-        .expect("Failed to write shopping-list.md");
+    fs::write("./shopping-list.md", &output).context("Failed to write shopping-list.md")?;
+    fs::write("./dishes.md", week_plan.dishes_as_markdown()).context("Failed to write dishes.md")?;
 
-    println!("Shopping lists generated successfully!");
+    Ok(())
 }

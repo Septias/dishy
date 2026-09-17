@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use tree_sitter::Parser;
 
 use crate::types::Ingredient;
@@ -48,7 +48,7 @@ impl Dish {
         let root = tree.root_node();
 
         if root.has_error() {
-            panic!("Parse error in dish file: {}", path.display());
+            bail!("Parse error in dish file: {}", path.display());
         }
 
         let mut cursor = root.walk();
@@ -109,7 +109,6 @@ impl Dish {
     /// Generate markdown for the dish with scaled quantities.
     pub(crate) fn as_markdown(&self) -> String {
         let target_people = self.people.unwrap_or(self.recepie_people);
-        println!("{target_people}");
         let scaled_ingredients = self.shopping_list();
 
         let mut output = String::new();

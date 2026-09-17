@@ -1,6 +1,6 @@
 use std::{fs, iter::Sum, ops::Add, path::Path};
 
-use anyhow::Context;
+use anyhow::{bail, Context, Result};
 use tree_sitter::Parser;
 
 use crate::{cookbook::CookBook, dish::Dish, types::IngredientList};
@@ -8,7 +8,9 @@ use crate::{cookbook::CookBook, dish::Dish, types::IngredientList};
 pub(crate) trait Plan {
     /// Generate a shopping list for all dishes.
     fn shopping_list(&self) -> IngredientList;
-    fn from_file(path: &Path, cookbook: &CookBook) -> Self;
+    fn from_file(path: &Path, cookbook: &CookBook) -> Result<Self>
+    where
+        Self: Sized;
 }
 
 /// A single day with multiple dishes.
@@ -26,7 +28,7 @@ impl Plan for Day {
             .sum()
     }
 
-    fn from_file(_path: &Path, _cookbook: &CookBook) -> Self {
+    fn from_file(_path: &Path, _cookbook: &CookBook) -> Result<Self> {
         unimplemented!()
     }
 }
@@ -137,37 +139,41 @@ impl Plan for WeekPlan {
         self.days.iter().map(|day| day.shopping_list()).sum()
     }
 
-    fn from_file(path: &Path, cookbook: &CookBook) -> Self {
+    fn from_file(path: &Path, cookbook: &CookBook) -> Result<Self> {
         let content = fs::read_to_string(path)
-            .with_context(|| format!("Failed to read plan file: {}", path.display()))
-            .unwrap();
+            .with_context(|| format!("Failed to read plan file: {}", path.display()))?;
 
         let mut parser = Parser::new();
         parser
             .set_language(&tree_sitter_menu::LANGUAGE.into())
-            .expect("Error loading menu parser");
+            .context("Error loading menu parser")?;
 
-        let tree = parser.parse(&content, None).expect("Failed to parse");
+        let tree = parser
+            .parse(&content, None)
+            .with_context(|| format!("Failed to parse plan file: {}", path.display()))?;
         let root = tree.root_node();
 
-        eprintln!("Root node kind: {}", root.kind());
-        eprintln!("Root has error: {}", root.has_error());
-        eprintln!("Tree: {}", root.to_sexp());
+        if root.has_error() {
+            bail!(
+                "Syntax error in plan file `{}`{}",
+                path.display(),
+                first_error_location(&root)
+            );
+        }
 
         let mut cursor = root.walk();
 
         let mut people = 1;
         let mut start_date = chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap();
         let mut days = Vec::new();
+        let mut missing = Vec::new();
 
         for child in root.children(&mut cursor) {
-            eprintln!("Child kind: {}", child.kind());
             match child.kind() {
                 "persons_line" => {
                     if let Some(count_node) = child.child_by_field_name("count") {
                         let count_str = content[count_node.byte_range()].trim();
                         people = count_str.parse().unwrap_or(1);
-                        eprintln!("Parsed people: {}", people);
                     }
                 }
                 "starttag_line" => {
@@ -177,29 +183,52 @@ impl Plan for WeekPlan {
                             .unwrap_or_else(|_| {
                                 chrono::NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()
                             });
-                        eprintln!("Parsed date: {}", start_date);
                     }
                 }
                 "day_line" => {
-                    let day = parse_day_line(&child, &content, cookbook, people);
-                    eprintln!("Parsed day with {} dishes", day.dishes.len());
+                    let day = parse_day_line(&child, &content, cookbook, people, &mut missing)?;
                     days.push(day);
                 }
                 _ => {}
             }
         }
 
-        eprintln!("Total days: {}", days.len());
-        eprintln!(
-            "Total dishes across all days: {}",
-            days.iter().map(|d| d.dishes.len()).sum::<usize>()
-        );
+        if !missing.is_empty() {
+            bail!(
+                "{} dish(es) in `{}` have no recipe in the cookbook:\n{}",
+                missing.len(),
+                path.display(),
+                missing
+                    .iter()
+                    .map(|name| format!("  - {name}"))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            );
+        }
 
-        Self {
+        Ok(Self {
             _start: start_date,
             days,
+        })
+    }
+}
+
+/// Describe where the first error node sits, for a useful syntax-error message.
+fn first_error_location(root: &tree_sitter::Node) -> String {
+    let mut cursor = root.walk();
+    let mut stack = vec![*root];
+
+    while let Some(node) = stack.pop() {
+        if node.is_error() || node.is_missing() {
+            let point = node.start_position();
+            return format!(" at line {}, column {}", point.row + 1, point.column + 1);
+        }
+        if node.has_error() {
+            stack.extend(node.children(&mut cursor));
         }
     }
+
+    String::new()
 }
 
 fn parse_day_line(
@@ -207,16 +236,15 @@ fn parse_day_line(
     content: &str,
     cookbook: &CookBook,
     default_people: usize,
-) -> Day {
+    missing: &mut Vec<String>,
+) -> Result<Day> {
     let mut day_people = None;
     let mut dishes = Vec::new();
     let mut shopping_days = Vec::new();
 
     let mut cursor = node.walk();
 
-    eprintln!("  Day line children:");
     for child in node.children(&mut cursor) {
-        eprintln!("    - kind: {}", child.kind());
         match child.kind() {
             "day_with_count" => {
                 if let Some(count_node) = child.child_by_field_name("count") {
@@ -226,7 +254,6 @@ fn parse_day_line(
                 }
             }
             "menu" => {
-                eprintln!("    Found menu node");
                 parse_menu(
                     &child,
                     content,
@@ -235,16 +262,17 @@ fn parse_day_line(
                     &mut shopping_days,
                     default_people,
                     day_people,
-                );
+                    missing,
+                )?;
             }
             _ => {}
         }
     }
 
-    Day {
+    Ok(Day {
         dishes,
         shopping_days,
-    }
+    })
 }
 
 fn parse_menu(
@@ -255,21 +283,18 @@ fn parse_menu(
     shopping_days: &mut Vec<usize>,
     default_people: usize,
     day_people: Option<usize>,
-) {
+    missing: &mut Vec<String>,
+) -> Result<()> {
     let mut cursor = node.walk();
 
-    eprintln!("      Menu children:");
     for child in node.children(&mut cursor) {
-        eprintln!("        - kind: {}", child.kind());
         match child.kind() {
             "rest_day" => {
-                return;
+                return Ok(());
             }
             "menu_items" => {
-                eprintln!("        Found menu_items");
                 let mut items_cursor = child.walk();
                 for item in child.children(&mut items_cursor) {
-                    eprintln!("          Item kind: {}", item.kind());
                     if item.kind() == "menu_item" {
                         parse_menu_item(
                             &item,
@@ -279,13 +304,16 @@ fn parse_menu(
                             shopping_days,
                             default_people,
                             day_people,
-                        );
+                            missing,
+                        )?;
                     }
                 }
             }
             _ => {}
         }
     }
+
+    Ok(())
 }
 
 fn parse_menu_item(
@@ -296,26 +324,22 @@ fn parse_menu_item(
     shopping_days: &mut Vec<usize>,
     default_people: usize,
     day_people: Option<usize>,
-) {
+    missing: &mut Vec<String>,
+) -> Result<()> {
     // The menu_item node directly contains either dish_with_count or shopping_marker
     // Get the first child which should be the actual content
     // let mut _cursor = node.walk();
 
     if let Some(child) = node.child(0) {
-        eprintln!("          Menu item child kind: {}", child.kind());
         match child.kind() {
             "dish_with_count" => {
                 if let Some(dish_node) = child.child_by_field_name("dish") {
-                    eprintln!("            Found dish node: {}", dish_node.kind());
-
                     // Get the full dish text (e.g., "[[Dish Name]]")
                     let dish_text = content[dish_node.byte_range()].trim();
-                    eprintln!("            Dish text: {}", dish_text);
 
                     // Strip the [[ and ]] brackets to get the dish name
                     if dish_text.starts_with("[[") && dish_text.ends_with("]]") {
                         let dish_name = &dish_text[2..dish_text.len() - 2];
-                        eprintln!("            Dish name: {}", dish_name);
 
                         // Extract multiplier if present
                         let dish_people = child.child_by_field_name("count").map(|count_node| {
@@ -327,31 +351,20 @@ fn parse_menu_item(
 
                         // Look up dish in cookbook
                         if let Some(dish_path) = cookbook.get(dish_name) {
-                            eprintln!("            Found in cookbook: {:?}", dish_path);
-
                             // use the proper amount of people!
                             let people =
                                 dish_people.unwrap_or(day_people.unwrap_or(default_people));
-                            match Dish::from_file(dish_path, dish_name, people) {
-                                Ok(dish) => {
-                                    eprintln!(
-                                        "            Loaded dish with {} ingredients",
-                                        dish.ingredients.len()
-                                    );
-                                    dishes.push(dish);
-                                }
-                                Err(e) => {
-                                    eprintln!("            Error loading dish: {}", e);
-                                }
-                            }
+                            let dish = Dish::from_file(dish_path, dish_name, people)
+                                .with_context(|| format!("Failed to load dish `{dish_name}`"))?;
+                            dishes.push(dish);
                         } else {
-                            eprintln!("            NOT found in cookbook");
+                            missing.push(dish_name.to_string());
                         }
                     } else {
-                        eprintln!("            Invalid dish format (missing brackets)");
+                        bail!("Invalid dish format, expected `[[Name]]`, got `{dish_text}`");
                     }
                 } else {
-                    eprintln!("            No dish node found");
+                    bail!("Menu item without a dish name");
                 }
             }
             "shopping_marker" => {
@@ -360,6 +373,8 @@ fn parse_menu_item(
             _ => {}
         }
     }
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -547,9 +562,9 @@ Montag: [[Test Dish]]
         let dish_path = temp_dir.path().join("Test Dish.txt");
         std::fs::write(&dish_path, dish_content).unwrap();
 
-        let cookbook = CookBook::from_file(temp_dir.path());
+        let cookbook = CookBook::from_file(temp_dir.path()).unwrap();
 
-        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook);
+        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook).unwrap();
 
         // Should have parsed the file successfully
         assert_eq!(weekplan.days.len(), 1);
@@ -579,8 +594,8 @@ Montag: [[Test Dish]]
         let dish_path = temp_dir.path().join("Test Dish.txt");
         std::fs::write(&dish_path, dish_content).unwrap();
 
-        let cookbook = CookBook::from_file(temp_dir.path());
-        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook);
+        let cookbook = CookBook::from_file(temp_dir.path()).unwrap();
+        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook).unwrap();
 
         assert_eq!(
             weekplan._start,
@@ -608,8 +623,8 @@ Montag: [[Dish1]], [[Dish2]]
         std::fs::write(temp_dir.path().join("Dish1.txt"), dish_content).unwrap();
         std::fs::write(temp_dir.path().join("Dish2.txt"), dish_content).unwrap();
 
-        let cookbook = CookBook::from_file(temp_dir.path());
-        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook);
+        let cookbook = CookBook::from_file(temp_dir.path()).unwrap();
+        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook).unwrap();
 
         assert_eq!(weekplan.days.len(), 1);
         assert_eq!(weekplan.days[0].dishes.len(), 2);
@@ -638,8 +653,8 @@ Mittwoch: [[Dish3]]
         std::fs::write(temp_dir.path().join("Dish2.txt"), dish_content).unwrap();
         std::fs::write(temp_dir.path().join("Dish3.txt"), dish_content).unwrap();
 
-        let cookbook = CookBook::from_file(temp_dir.path());
-        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook);
+        let cookbook = CookBook::from_file(temp_dir.path()).unwrap();
+        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook).unwrap();
 
         assert_eq!(weekplan.days.len(), 3);
         assert_eq!(weekplan.days[0].dishes.len(), 1);
@@ -667,8 +682,8 @@ Dienstag: Reste
         let temp_dir = TempDir::new().unwrap();
         std::fs::write(temp_dir.path().join("Dish1.txt"), dish_content).unwrap();
 
-        let cookbook = CookBook::from_file(temp_dir.path());
-        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook);
+        let cookbook = CookBook::from_file(temp_dir.path()).unwrap();
+        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook).unwrap();
 
         assert_eq!(weekplan.days.len(), 2);
         assert_eq!(weekplan.days[0].dishes.len(), 1);
@@ -694,8 +709,8 @@ Montag: [[Dish1]](4)
         let temp_dir = TempDir::new().unwrap();
         std::fs::write(temp_dir.path().join("Dish1.txt"), dish_content).unwrap();
 
-        let cookbook = CookBook::from_file(temp_dir.path());
-        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook);
+        let cookbook = CookBook::from_file(temp_dir.path()).unwrap();
+        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook).unwrap();
 
         assert_eq!(weekplan.days.len(), 1);
         assert_eq!(weekplan.days[0].dishes.len(), 1);
@@ -723,8 +738,8 @@ Montag(4): [[Dish1]]
         let temp_dir = TempDir::new().unwrap();
         std::fs::write(temp_dir.path().join("Dish1.txt"), dish_content).unwrap();
 
-        let cookbook = CookBook::from_file(temp_dir.path());
-        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook);
+        let cookbook = CookBook::from_file(temp_dir.path()).unwrap();
+        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook).unwrap();
 
         assert_eq!(weekplan.days.len(), 1);
         assert_eq!(weekplan.days[0].dishes.len(), 1);
@@ -752,8 +767,8 @@ Montag(4): [[Dish1]](2)
         let temp_dir = TempDir::new().unwrap();
         std::fs::write(temp_dir.path().join("Dish1.txt"), dish_content).unwrap();
 
-        let cookbook = CookBook::from_file(temp_dir.path());
-        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook);
+        let cookbook = CookBook::from_file(temp_dir.path()).unwrap();
+        let weekplan = WeekPlan::from_file(menu_file.path(), &cookbook).unwrap();
 
         assert_eq!(weekplan.days.len(), 1);
         assert_eq!(weekplan.days[0].dishes.len(), 1);

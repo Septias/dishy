@@ -38,3 +38,37 @@ Samstag: Reste
       name: (day_name))
     (menu
       (rest_day))))
+
+==================
+Blank lines between sections
+==================
+
+Personen: 13
+Starttag: 2026-04-02
+
+
+Freitag: [[Nudeln mit Bolo]](11)
+
+Samstag: Reste
+
+---
+
+(source_file
+  (persons_line
+    count: (integer))
+  (starttag_line
+    date: (date))
+  (day_line
+    day: (day_with_count
+      name: (day_name))
+    (menu
+      (menu_items
+        (menu_item
+          (dish_with_count
+            dish: (dish)
+            count: (count))))))
+  (day_line
+    day: (day_with_count
+      name: (day_name))
+    (menu
+      (rest_day))))

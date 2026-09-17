@@ -9,6 +9,6 @@ pub(crate) struct Cli {
     pub plan: PathBuf,
 
     /// Root path under which all dishes can be found.
-    #[arg(short, long, default_value = "./")]
+    #[arg(short, long, default_value = "./cookbook")]
     pub dish_root: PathBuf,
 }

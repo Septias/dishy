@@ -1,20 +1,17 @@
 ## Dish Calculator
 
-Berechne, Skaliere und Addiere die Zutaten für einen Essensplan, um den Einkauf zu erleichtern. Exportiere den Plan als PDF.
+Calculate, scale, and add up ingredients for a meal plan to make shopping easier. Export the plan as a PDF.
 
 ## Features
 
-- [x] Skalieren
-- [x] Akkumulieren
-- [x] Generate Shopping List
-  - [x] Split by Einkauf
-- [] Generate Clustered Shopping List
+- [x] Scale single dishes
+- [x] Accumulate plans (multiple dishes)
+- [x] Generate shopping lists
+  - [ ] Clustert by ingredient-kind
 - [x] PDF-Export
   - [x] Shopping list
   - [x] Scaled Recepies
-- [] Vegane Optionen
-- [] Vereinfachen von Einheiten
-- [] Nutri Score
+- [ ] Vegan options
+- [ ] Simplify Units
+- [ ] Calculate nutrition scores
 
-## Fixes
-- Give back a list of things that were not found

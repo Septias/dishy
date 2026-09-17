@@ -6,12 +6,24 @@
       "type": "SEQ",
       "members": [
         {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "_line_break"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
           "type": "SYMBOL",
           "name": "persons_line"
         },
         {
-          "type": "STRING",
-          "value": "\n"
+          "type": "SYMBOL",
+          "name": "_line_break"
         },
         {
           "type": "SYMBOL",
@@ -23,8 +35,8 @@
             "type": "SEQ",
             "members": [
               {
-                "type": "STRING",
-                "value": "\n"
+                "type": "SYMBOL",
+                "name": "_line_break"
               },
               {
                 "type": "SYMBOL",
@@ -37,8 +49,8 @@
           "type": "CHOICE",
           "members": [
             {
-              "type": "STRING",
-              "value": "\n"
+              "type": "SYMBOL",
+              "name": "_line_break"
             },
             {
               "type": "BLANK"
@@ -46,6 +58,10 @@
           ]
         }
       ]
+    },
+    "_line_break": {
+      "type": "PATTERN",
+      "value": "\\n([ \\t]*\\n)*"
     },
     "persons_line": {
       "type": "SEQ",

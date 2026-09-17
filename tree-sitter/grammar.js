@@ -17,12 +17,17 @@ module.exports = grammar({
   rules: {
     source_file: $ =>
       seq(
+        optional($._line_break),
         $.persons_line,
-        "\n",
+        $._line_break,
         $.starttag_line,
-        repeat(seq("\n", $.day_line)),
-        optional("\n")
+        repeat(seq($._line_break, $.day_line)),
+        optional($._line_break)
       ),
+
+    // A line ending plus any number of following blank lines, as a single
+    // token, so blank lines may be used freely to structure a plan.
+    _line_break: _ => /\n([ \t]*\n)*/,
 
     // --------------------
     // Header
